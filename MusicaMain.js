@@ -2,8 +2,9 @@ import { Musica } from './Musica.js';
 import { LlistaMusiques } from './LlistaMusica.js';
 
 let musiques = [];
-let llistes = [];
+let llistes = new Map(); 
 let llistaEnEdicio = null;
+let llistaDisponible = null;
 
 function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, ch => ({
@@ -22,31 +23,138 @@ function mostrarError(message) {
     }
 }
 
+// VALIDACIONS EN TEMPS REAL
+
+function mostrarFeedback(elementId, tipus, missatge) {
+    const feedbackDiv = document.getElementById(elementId);
+    if (feedbackDiv) {
+        feedbackDiv.className = `feedback ${tipus}`;
+        feedbackDiv.textContent = missatge;
+    }
+}
+
+function amagarFeedback(elementId) {
+    const feedbackDiv = document.getElementById(elementId);
+    if (feedbackDiv) {
+        feedbackDiv.className = 'feedback';
+        feedbackDiv.textContent = '';
+    }
+}
+
+function validarTitol() {
+    const titol = document.getElementById('input_titol').value.trim();
+    
+    if (titol.length === 0) {
+        amagarFeedback('feedback_titol');
+        return false;
+    }
+    
+    if (titol.length < 2) {
+        mostrarFeedback('feedback_titol', 'error', 'El títol ha de tenir almenys 2 caràcters');
+        return false;
+    }
+    
+    if (titol.length > 20) {
+        mostrarFeedback('feedback_titol', 'error', 'El títol no pot superar els 20 caràcters');
+        return false;
+    }
+    
+    mostrarFeedback('feedback_titol', 'success', 'Títol correcte');
+    return true;
+}
+
+function validarNomArxiu() {
+    const nom = document.getElementById('input_nomArxiu').value;
+    
+    if (!nom || nom === '') {
+        amagarFeedback('feedback_nomArxiu');
+        return false;
+    }
+    
+    const extensionsValides = ['mp3', 'ogg', 'wav'];
+    const extensio = nom.split('.').pop().toLowerCase();
+    
+    if (!extensionsValides.includes(extensio)) {
+        mostrarFeedback('feedback_nomArxiu', 'error', 'Extensió no vàlida (usa mp3, ogg o wav)');
+        return false;
+    }
+    
+    mostrarFeedback('feedback_nomArxiu', 'success', 'Arxiu correcte');
+    return true;
+}
+
+function validarEtiquetes() {
+    const checkboxes = document.querySelectorAll('input[name="etiquetes"]:checked');
+    
+    if (checkboxes.length === 0) {
+        mostrarFeedback('feedback_etiquetes', 'error', 'Has de seleccionar almenys una etiqueta');
+        return false;
+    }
+    
+    mostrarFeedback('feedback_etiquetes', 'success', `${checkboxes.length} etiqueta/es seleccionada/es`);
+    return true;
+}
+
+function validarFormulari() {
+    const titolValid = validarTitol();
+    const arxiuValid = validarNomArxiu();
+    const etiquetesValid = validarEtiquetes();
+    
+    const btnCrear = document.getElementById('btn_crear');
+    if (btnCrear) {
+        btnCrear.disabled = !(titolValid && arxiuValid && etiquetesValid);
+    }
+    
+    return titolValid && arxiuValid && etiquetesValid;
+}
+
 // MUSICA
 
-window.creaMusica = function () {
+window.creaMusica = function (e) {
+    if (e) e.preventDefault();
+    
+    // Validar tot abans de crear
+    if (!validarFormulari()) {
+        return;
+    }
+    
     try {
-        const titol = document.getElementById('input_titol').value;
+        const titol = document.getElementById('input_titol').value.trim();
         const nom = document.getElementById('input_nomArxiu').value;
-        const etiquetes = document.getElementById('input_etiquetes').value
-            .split(',')
-            .map(s => s.trim())
-            .filter(Boolean);
+        
+        const checkboxes = document.querySelectorAll('input[name="etiquetes"]:checked');
+        const etiquetes = Array.from(checkboxes).map(cb => cb.value);
 
         const m = new Musica(titol, nom, etiquetes);
         musiques.push(m);
+        
+        // Afegir a la llista "Disponible"
+        if (llistaDisponible) {
+            llistaDisponible.afegirMusica(m);
+        }
 
         actualitzaLlistaMusica();
         actualitzaFiltresMusiques();
         actualitzaSelectMusiques();
+        actualitzaLlisteLlistes();
 
+        // Netejar el formulari
         document.getElementById('input_titol').value = '';
         document.getElementById('input_nomArxiu').value = '';
-        document.getElementById('input_etiquetes').value = '';
+        document.getElementById('input_nomArxiu').selectedIndex = 0;
+        
+        // Desmarcar tots els checkboxes
+        checkboxes.forEach(cb => cb.checked = false);
+        
+        // Amagar tots els feedbacks
+        amagarFeedback('feedback_titol');
+        amagarFeedback('feedback_nomArxiu');
+        amagarFeedback('feedback_etiquetes');
+        
+        // Desactivar el botó fins que es torni a omplir
+        document.getElementById('btn_crear').disabled = true;
 
         mostrarError('');
-        
-        document.getElementById('input_nomArxiu').selectedIndex = 0;
     } catch (err) {
         mostrarError(err.message || String(err));
     }
@@ -257,7 +365,7 @@ window.creaLlista = function () {
             .filter(Boolean);
 
         const nova = new LlistaMusiques(titol, etiquetes, []);
-        llistes.push(nova);
+        llistes.set(nova.titol, nova);
 
         actualitzaLlisteLlistes();
         actualitzaFiltresLlistes();
@@ -275,12 +383,12 @@ function actualitzaLlisteLlistes() {
     const llista = document.getElementById('llista_llistes');
     llista.innerHTML = '';
 
-    llistes.forEach((l, index) => {
-        llista.innerHTML += generaCodiHTMLLlista(l, index);
+    llistes.forEach((l, titol) => {
+        llista.innerHTML += generaCodiHTMLLlista(l, titol);
     });
 }
 
-function generaCodiHTMLLlista(llista, index) {
+function generaCodiHTMLLlista(llista, titol) {
     const etiquetasHTML = llista.etiquetes
         .map(tag => `<span class="tag">${escapeHtml(tag)}</span>`)
         .join('');
@@ -293,28 +401,31 @@ function generaCodiHTMLLlista(llista, index) {
                 ${etiquetasHTML ? `<div class="tags">${etiquetasHTML}</div>` : '<div style="color: #999;">sense etiquetes</div>'}
             </div>
             <div class="button-group">
-                <button onclick="window.editarLlista(${index})">✎ Editar</button>
-                <button class="danger" onclick="window.eliminarLlista(${index})">✕ Eliminar</button>
+                <button onclick="window.editarLlista('${escapeHtml(titol)}')">✎ Editar</button>
+                <button class="danger" onclick="window.eliminarLlista('${escapeHtml(titol)}')">✕ Eliminar</button>
             </div>
         </div>
     `;
 }
 
-window.editarLlista = function (index) {
-    llistaEnEdicio = { index, llista: llistes[index] };
+window.editarLlista = function (titol) {
+    const llista = llistes.get(titol);
+    if (!llista) return;
+    
+    llistaEnEdicio = { titol, llista };
 
     const seccion = document.getElementById('seccion_editar_llista');
     if (seccion) seccion.style.display = 'block';
 
-    document.getElementById('titulo_editar_llista').textContent = `Editar: ${escapeHtml(llistes[index].titol)}`;
+    document.getElementById('titulo_editar_llista').textContent = `Editar: ${escapeHtml(llista.titol)}`;
     actualitzaSelectMusiques();
     actualitzaEtiquetesLlistaDisplay();
     actualitzaMusiquesLlistaDisplay();
 };
 
-window.eliminarLlista = function (index) {
+window.eliminarLlista = function (titol) {
     if (confirm('Estàs segur que vols eliminar aquesta llista?')) {
-        llistes.splice(index, 1);
+        llistes.delete(titol);
         actualitzaLlisteLlistes();
         actualitzaFiltresLlistes();
     }
@@ -469,9 +580,9 @@ window.filtrarLlistes = function () {
     const llista = document.getElementById('llista_llistes');
     llista.innerHTML = '';
 
-    llistes.forEach((l, index) => {
+    llistes.forEach((l, titol) => {
         if (!selectedTag || l.etiquetes.includes(selectedTag)) {
-            llista.innerHTML += generaCodiHTMLLlista(l, index);
+            llista.innerHTML += generaCodiHTMLLlista(l, titol);
         }
     });
 };
@@ -480,23 +591,45 @@ window.filtrarLlistes = function () {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Crear la llista "Disponible" per defecte
+    try {
+        llistaDisponible = new LlistaMusiques('Disponible', [], []);
+        llistes.set(llistaDisponible.titol, llistaDisponible);
+    } catch (err) {
+        console.error('Error creant llista Disponible:', err);
+    }
+
     actualitzaLlistaMusica();
     actualitzaFiltresMusiques();
     actualitzaSelectMusiques();
     actualitzaLlisteLlistes();
     actualitzaFiltresLlistes();
 
-    const btnCrear = document.getElementById('btn_crear');
-    if (btnCrear) btnCrear.addEventListener('click', creaMusica);
+    // Gestió del formulari de crear música
+    const formCrear = document.getElementById('form_crear_musica');
+    if (formCrear) formCrear.addEventListener('submit', creaMusica);
 
     const btnCrearLlista = document.getElementById('btn_crear_llista');
     if (btnCrearLlista) btnCrearLlista.addEventListener('click', creaLlista);
 
-    document.getElementById('input_titol').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') creaMusica();
-    });
-
     document.getElementById('input_titol_llista').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') creaLlista();
+    });
+    
+    // Event listeners per validació en temps real
+    const inputTitol = document.getElementById('input_titol');
+    if (inputTitol) {
+        inputTitol.addEventListener('input', validarFormulari);
+        inputTitol.addEventListener('blur', validarFormulari);
+    }
+    
+    const inputNomArxiu = document.getElementById('input_nomArxiu');
+    if (inputNomArxiu) {
+        inputNomArxiu.addEventListener('change', validarFormulari);
+    }
+    
+    const checkboxesEtiquetes = document.querySelectorAll('input[name="etiquetes"]');
+    checkboxesEtiquetes.forEach(cb => {
+        cb.addEventListener('change', validarFormulari);
     });
 });

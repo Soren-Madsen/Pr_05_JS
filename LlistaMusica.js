@@ -90,18 +90,4 @@ export class LlistaMusiques {
     }
 }
 
-// OBJECTE LLISTA MUSICA 
-// (finalment no utilitzat, a l'hora de crear musica
-// ja es veuen disponibles els audios predefinits seleccionant el nom de l'arxiu)
-
-export const llistaMusiquesDisponibles = new LlistaMusiques(
-    "disponibles",
-    ["tots"],
-    [
-        new Musica("Notification", "Notification.wav", ["alerta", "notificació"]),
-        new Musica("Screech", "Screech.wav", ["alarm", "despertador"]),
-        new Musica("Spooky", "Spooky.wav", ["terror", "misterios"])
-    ]
-);
-
 
