@@ -30,7 +30,9 @@ export class Alarma {
         return this._segon;
     }
     get hora_completa() {
-        return this._hora + ":" + this._minut + ":" + this._segon;
+        return String(this._hora).padStart(2, '0') + ":" + 
+               String(this._minut).padStart(2, '0') + ":" + 
+               String(this._segon).padStart(2, '0');
     }
     get musica() {
         return this._musica;
@@ -64,14 +66,17 @@ export class Alarma {
         }, 1000);
         this.activa = true;
     }
-    generaCodiHTML() {
-        return `<div>
-                    <h2>${this.titol}</h2>
-                    <div>Hora Alarma: ${this.hora_completa}</div>
-                    <div>Música: ${this.musica}</div>
-                    <div>Activa: ${this.activa}</div>
-                    <button onclick="activaAlarma(${index})" style="color: green;">ACTIVA</button>
-                    <button onclick="desactivaAlarma(${index})" style="color: red;">DESACTIVA</button>
+    generaCodiHTML(horaCompleta) {
+        const estatActiva = this.activa ? "✅ Sí" : "❌ No";
+        const colorEstat = this.activa ? "green" : "red";
+        
+        return `<div class="alarma-item">
+                    <h2>⏰ ${this.titol}</h2>
+                    <div><strong>Hora Alarma:</strong> ${this.hora_completa}</div>
+                    <div><strong>Música:</strong> ${this.musica}</div>
+                    <div><strong>Activa:</strong> <span style="color: ${colorEstat};">${estatActiva}</span></div>
+                    <button onclick="activaAlarma('${horaCompleta}')" style="background-color: green;">ACTIVA</button>
+                    <button onclick="desactivaAlarma('${horaCompleta}')" style="background-color: red;">DESACTIVA</button>
                 </div>`;
     }
 }

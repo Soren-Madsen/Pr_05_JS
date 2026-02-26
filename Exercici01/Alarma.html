@@ -1,15 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ca">
 <head>
-   
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor d'Alarmes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        #formulari_alarma {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+        }
+        input.input-error,
+        select.input-error {
+            border-color: #d32f2f;
+            background-color: #ffebee;
+        }
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        .time-inputs .form-group {
+            flex: 1;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+            font-weight: 500;
+            background-color: #ffebee;
+            padding: 5px 8px;
+            border-radius: 3px;
+            border-left: 3px solid #d32f2f;
+        }
+        #llista_alarmes {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .alarma-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .alarma-item h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .alarma-item button {
+            width: auto;
+            padding: 8px 15px;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-        titol: <input type="text" id="input_titol"> <br/>
-        hora: <input type="number" id="input_hora"> <br/>
-        minut: <input type="number" id="input_minut"> <br/>
-        segon: <input type="number" id="input_segon"> <br/>
-        musica: <input type="text" id="input_musica"> <br/>
-        <button id="btn_crear_alarma" onclick="creaAlarma()">CREAR ALARMA</button>
-        <div id="llista_alarmes"></div>
+    <h1>⏰ Gestor d'Alarmes</h1>
+    
+    <form id="formulari_alarma">
+        <div class="form-group">
+            <label for="input_titol">Títol de l'alarma:</label>
+            <input type="text" id="input_titol" placeholder="Exemple: Despertar, Reunió..." required>
+            <span class="error" id="error_titol">El títol és obligatori i ha de tenir almenys 3 caràcters</span>
+        </div>
+        
+        <div class="time-inputs">
+            <div class="form-group">
+                <label for="input_hora">Hora (0-23):</label>
+                <input type="number" id="input_hora" min="0" max="23" placeholder="12" required>
+                <span class="error" id="error_hora">Hora entre 0 i 23</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="input_minut">Minut (0-59):</label>
+                <input type="number" id="input_minut" min="0" max="59" placeholder="30" required>
+                <span class="error" id="error_minut">Minut entre 0 i 59</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="input_segon">Segon (0-59):</label>
+                <input type="number" id="input_segon" min="0" max="59" placeholder="0" required>
+                <span class="error" id="error_segon">Segon entre 0 i 59</span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="input_musica">Música:</label>
+            <select id="input_musica" required>
+                <option value="">-- Selecciona una música --</option>
+                <option value="Notification.wav">Notification</option>
+                <option value="Screech.wav">Screech</option>
+                <option value="Spooky.wav">Spooky</option>
+            </select>
+            <span class="error" id="error_musica">Has de seleccionar una música vàlida de la llista</span>
+        </div>
+        
+        <div class="form-group">
+            <label for="input_activa">
+                <input type="checkbox" id="input_activa" checked>
+                Alarma activa
+            </label>
+        </div>
+        
+        <button type="submit" id="btn_crear_alarma">CREAR ALARMA</button>
+    </form>
+    
+    <div id="llista_alarmes"></div>
+    
+    <script type="module" src="AlarmaMain.js"></script>
 </body>
 </html>
