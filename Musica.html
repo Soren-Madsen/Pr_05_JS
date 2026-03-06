@@ -42,6 +42,18 @@
             background-color: #3a3a3a;
             color: #e0e0e0;
         }
+        select[multiple] {
+            padding: 4px;
+        }
+        select[multiple] option {
+            padding: 6px 8px;
+            margin: 2px 0;
+            border-radius: 3px;
+        }
+        select[multiple] option:checked {
+            background-color: #1a3a52;
+            color: #64b5f6;
+        }
         input[type="text"]:focus, select:focus {
             outline: none;
             border-color: #007bff;
@@ -275,13 +287,54 @@
         <div id="llistes_tab" class="tab-content">
             <div class="section">
                 <h2>Crear Nova Llista de Música</h2>
-                <label>Títol de la llista
-                    <input type="text" id="input_titol_llista" placeholder="ex: Música de treball">
-                </label>
-                <label>Etiquetes inicials (separades per coma)
-                    <input type="text" id="input_etiquetes_llista" placeholder="opcional">
-                </label>
-                <button id="btn_crear_llista" class="success">CREAR LLISTA</button>
+                <form id="form_crear_llista">
+                    <label>Títol de la llista
+                        <input type="text" id="input_titol_llista" placeholder="entre 2 i 10 caràcters" 
+                               minlength="2" maxlength="10">
+                        <div id="feedback_titol_llista" class="feedback"></div>
+                    </label>
+                    
+                    <label style="margin-bottom: 8px; margin-top: 12px;">Etiquetes</label>
+                    <div style="background-color: #252525; padding: 12px; border-radius: 4px; margin-top: 4px; margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; margin: 4px 0; cursor: pointer;">
+                            <input type="checkbox" name="etiquetes_llista" value="jazz" style="margin-right: 8px; cursor: pointer; width: auto;">
+                            <span>Jazz</span>
+                        </label>
+                        <label style="display: flex; align-items: center; margin: 4px 0; cursor: pointer;">
+                            <input type="checkbox" name="etiquetes_llista" value="pop" style="margin-right: 8px; cursor: pointer; width: auto;">
+                            <span>Pop</span>
+                        </label>
+                        <label style="display: flex; align-items: center; margin: 4px 0; cursor: pointer;">
+                            <input type="checkbox" name="etiquetes_llista" value="rock" style="margin-right: 8px; cursor: pointer; width: auto;">
+                            <span>Rock</span>
+                        </label>
+                        <label style="display: flex; align-items: center; margin: 4px 0; cursor: pointer;">
+                            <input type="checkbox" name="etiquetes_llista" value="clàssica" style="margin-right: 8px; cursor: pointer; width: auto;">
+                            <span>Clàssica</span>
+                        </label>
+                        <label style="display: flex; align-items: center; margin: 4px 0; cursor: pointer;">
+                            <input type="checkbox" name="etiquetes_llista" value="relax" style="margin-right: 8px; cursor: pointer; width: auto;">
+                            <span>Relax</span>
+                        </label>
+                        <label style="display: flex; align-items: center; margin: 4px 0; cursor: pointer;">
+                            <input type="checkbox" name="etiquetes_llista" value="electrònica" style="margin-right: 8px; cursor: pointer; width: auto;">
+                            <span>Electrònica</span>
+                        </label>
+                    </div>
+                    <div id="feedback_etiquetes_llista" class="feedback"></div>
+                    
+                    <label>Músiques (selecciona almenys 2)
+                        <select id="input_musiques_llista" multiple style="height: 120px;">
+                        </select>
+                        <small style="display: block; color: #999; font-size: 12px; margin-top: 4px;">
+                            💡 Clica sobre les opcions per seleccionar-les o desseleccionar-les
+                        </small>
+                        <div id="feedback_musiques_llista" class="feedback"></div>
+                    </label>
+                    
+                    <button type="button" id="btn_crear_llista" class="success">CREAR LLISTA</button>
+                    <div id="error_llista" class="error" style="margin-top: 8px;"></div>
+                </form>
             </div>
 
             <div class="section">

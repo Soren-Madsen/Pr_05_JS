@@ -113,7 +113,6 @@ function validarFormulari() {
 window.creaMusica = function (e) {
     if (e) e.preventDefault();
     
-    // Validar tot abans de crear
     if (!validarFormulari()) {
         return;
     }
@@ -128,7 +127,6 @@ window.creaMusica = function (e) {
         const m = new Musica(titol, nom, etiquetes);
         musiques.push(m);
         
-        // Afegir a la llista "Disponible"
         if (llistaDisponible) {
             llistaDisponible.afegirMusica(m);
         }
@@ -136,22 +134,19 @@ window.creaMusica = function (e) {
         actualitzaLlistaMusica();
         actualitzaFiltresMusiques();
         actualitzaSelectMusiques();
-        actualitzaLlisteLlistes();
+        actualitzaSelectMusiquesLlista();
+        actualitzaLlistatLlistes();
 
-        // Netejar el formulari
         document.getElementById('input_titol').value = '';
         document.getElementById('input_nomArxiu').value = '';
         document.getElementById('input_nomArxiu').selectedIndex = 0;
         
-        // Desmarcar tots els checkboxes
         checkboxes.forEach(cb => cb.checked = false);
         
-        // Amagar tots els feedbacks
         amagarFeedback('feedback_titol');
         amagarFeedback('feedback_nomArxiu');
         amagarFeedback('feedback_etiquetes');
         
-        // Desactivar el botó fins que es torni a omplir
         document.getElementById('btn_crear').disabled = true;
 
         mostrarError('');
@@ -206,6 +201,7 @@ window.eliminarMusica = function (index) {
         actualitzaLlistaMusica();
         actualitzaFiltresMusiques();
         actualitzaSelectMusiques();
+        actualitzaSelectMusiquesLlista();
     }
 };
 
@@ -353,33 +349,142 @@ function actualitzaSelectMusiques() {
     select.value = currentValue;
 }
 
+function actualitzaSelectMusiquesLlista() {
+    const select = document.getElementById('input_musiques_llista');
+    if (!select) return;
+
+    select.innerHTML = '';
+    if (musiques.length === 0) {
+        const option = document.createElement('option');
+        option.disabled = true;
+        option.textContent = '-- No hi ha músiques disponibles --';
+        select.appendChild(option);
+    } else {
+        musiques.forEach((m, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${m.titol} (${m.nomArxiu})`;
+            select.appendChild(option);
+        });
+    }
+}
+
 
 // LLISTA MUSICA
 
-window.creaLlista = function () {
-    try {
-        const titol = document.getElementById('input_titol_llista').value;
-        const etiquetes = document.getElementById('input_etiquetes_llista').value
-            .split(',')
-            .map(s => s.trim())
-            .filter(Boolean);
+    // VALIDACIONS LLISTA MUSICA
 
-        const nova = new LlistaMusiques(titol, etiquetes, []);
+function mostrarErrorLlista(message) {
+    const errorDiv = document.getElementById('error_llista');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+    }
+}
+
+function validarTitolLlista() {
+    const titol = document.getElementById('input_titol_llista').value.trim();
+    
+    if (titol.length === 0) {
+        amagarFeedback('feedback_titol_llista');
+        return false;
+    }
+    
+    if (titol.length < 2) {
+        mostrarFeedback('feedback_titol_llista', 'error', 'El títol ha de tenir almenys 2 caràcters');
+        return false;
+    }
+    
+    if (titol.length > 10) {
+        mostrarFeedback('feedback_titol_llista', 'error', 'El títol no pot superar els 10 caràcters');
+        return false;
+    }
+    
+    mostrarFeedback('feedback_titol_llista', 'success', 'Títol correcte');
+    return true;
+}
+
+function validarEtiquetesLlista() {
+    const checkboxes = document.querySelectorAll('input[name="etiquetes_llista"]:checked');
+    
+    if (checkboxes.length === 0) {
+        mostrarFeedback('feedback_etiquetes_llista', 'error', 'Has de seleccionar almenys una etiqueta');
+        return false;
+    }
+    
+    mostrarFeedback('feedback_etiquetes_llista', 'success', `${checkboxes.length} etiqueta/es seleccionada/es`);
+    return true;
+}
+
+function validarMusiquesLlista() {
+    const select = document.getElementById('input_musiques_llista');
+    const selectedOptions = Array.from(select.selectedOptions);
+    
+    if (selectedOptions.length === 0) {
+        mostrarFeedback('feedback_musiques_llista', 'error', 'Has de seleccionar almenys 2 músiques');
+        return false;
+    }
+    
+    if (selectedOptions.length < 2) {
+        mostrarFeedback('feedback_musiques_llista', 'error', `Només tens ${selectedOptions.length} música seleccionada, necessites almenys 2`);
+        return false;
+    }
+    
+    mostrarFeedback('feedback_musiques_llista', 'success', `${selectedOptions.length} músiques seleccionades`);
+    return true;
+}
+
+function validarFormulariLlista() {
+    const titolValid = validarTitolLlista();
+    const etiquetesValid = validarEtiquetesLlista();
+    const musiquesValid = validarMusiquesLlista();
+    
+    return titolValid && etiquetesValid && musiquesValid;
+}
+
+window.creaLlista = function () {
+    // Validar formulari
+    const esValid = validarFormulariLlista();
+    
+    if (!esValid) {
+        mostrarErrorLlista('No es pot crear la llista. Corregeix els errors abans de continuar.');
+        return;
+    }
+    
+    try {
+        const titol = document.getElementById('input_titol_llista').value.trim();
+        
+        const checkboxesEtiquetes = document.querySelectorAll('input[name="etiquetes_llista"]:checked');
+        const etiquetes = Array.from(checkboxesEtiquetes).map(cb => cb.value);
+        
+        const select = document.getElementById('input_musiques_llista');
+        const selectedOptions = Array.from(select.selectedOptions);
+        const musiquesSeleccionades = selectedOptions.map(opt => {
+            const index = parseInt(opt.value);
+            return musiques[index];
+        }).filter(m => m); 
+
+        const nova = new LlistaMusiques(titol, etiquetes, musiquesSeleccionades);
         llistes.set(nova.titol, nova);
 
-        actualitzaLlisteLlistes();
+        actualitzaLlistatLlistes();
         actualitzaFiltresLlistes();
+        actualitzaSelectMusiquesLlista();
 
         document.getElementById('input_titol_llista').value = '';
-        document.getElementById('input_etiquetes_llista').value = '';
+        checkboxesEtiquetes.forEach(cb => cb.checked = false);
+        select.selectedIndex = -1;
+        
+        amagarFeedback('feedback_titol_llista');
+        amagarFeedback('feedback_etiquetes_llista');
+        amagarFeedback('feedback_musiques_llista');
 
-        mostrarError('');
+        mostrarErrorLlista('');
     } catch (err) {
-        mostrarError(err.message || String(err));
+        mostrarErrorLlista(err.message || String(err));
     }
 };
 
-function actualitzaLlisteLlistes() {
+function actualitzaLlistatLlistes() {
     const llista = document.getElementById('llista_llistes');
     llista.innerHTML = '';
 
@@ -426,7 +531,7 @@ window.editarLlista = function (titol) {
 window.eliminarLlista = function (titol) {
     if (confirm('Estàs segur que vols eliminar aquesta llista?')) {
         llistes.delete(titol);
-        actualitzaLlisteLlistes();
+        actualitzaLlistatLlistes();
         actualitzaFiltresLlistes();
     }
 };
@@ -482,7 +587,7 @@ window.afegirEtiquetaALlista = function () {
         llistaEnEdicio.llista.afegirEtiqueta(etiqueta);
         actualitzaEtiquetesLlistaDisplay();
         input.value = '';
-        actualitzaLlisteLlistes();
+        actualitzaLlistatLlistes();
         mostrarError('');
     } catch (err) {
         mostrarError(err.message);
@@ -495,7 +600,7 @@ window.treureEtiquetaALlista = function (etiqueta) {
     if (confirm(`Treure l'etiqueta "${escapeHtml(etiqueta)}"?`)) {
         llistaEnEdicio.llista.treureEtiqueta(etiqueta);
         actualitzaEtiquetesLlistaDisplay();
-        actualitzaLlisteLlistes();
+        actualitzaLlistatLlistes();
     }
 };
 
@@ -602,7 +707,8 @@ document.addEventListener('DOMContentLoaded', () => {
     actualitzaLlistaMusica();
     actualitzaFiltresMusiques();
     actualitzaSelectMusiques();
-    actualitzaLlisteLlistes();
+    actualitzaSelectMusiquesLlista();
+    actualitzaLlistatLlistes();
     actualitzaFiltresLlistes();
 
     // Gestió del formulari de crear música
@@ -611,12 +717,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnCrearLlista = document.getElementById('btn_crear_llista');
     if (btnCrearLlista) btnCrearLlista.addEventListener('click', creaLlista);
-
-    document.getElementById('input_titol_llista').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') creaLlista();
-    });
     
-    // Event listeners per validació en temps real
+    // Event listeners per validació en temps real - Música
     const inputTitol = document.getElementById('input_titol');
     if (inputTitol) {
         inputTitol.addEventListener('input', validarFormulari);
@@ -632,4 +734,34 @@ document.addEventListener('DOMContentLoaded', () => {
     checkboxesEtiquetes.forEach(cb => {
         cb.addEventListener('change', validarFormulari);
     });
+    
+    // Event listeners per validació en temps real - Llista Músiques
+    const inputTitolLlista = document.getElementById('input_titol_llista');
+    if (inputTitolLlista) {
+        inputTitolLlista.addEventListener('input', validarFormulariLlista);
+        inputTitolLlista.addEventListener('blur', validarFormulariLlista);
+    }
+    
+    const checkboxesEtiquetesLlista = document.querySelectorAll('input[name="etiquetes_llista"]');
+    checkboxesEtiquetesLlista.forEach(cb => {
+        cb.addEventListener('change', validarFormulariLlista);
+    });
+    
+    const selectMusiquesLlista = document.getElementById('input_musiques_llista');
+    if (selectMusiquesLlista) {
+        selectMusiquesLlista.addEventListener('change', validarFormulariLlista);
+        
+        // Permetre selecció múltiple amb clic simple (sense Ctrl/Cmd o Shift)
+        // JavaScript captura l'event mousedown i canvia manualment l'estat selected de l'opció, fent que funcioni com un toggle (activar/desactivar) amb cada clic.
+        selectMusiquesLlista.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            const option = e.target;
+            if (option.tagName === 'OPTION') {
+                option.selected = !option.selected;
+                this.focus();
+                // Disparar event change per actualitzar validació
+                this.dispatchEvent(new Event('change'));
+            }
+        });
+    }
 });

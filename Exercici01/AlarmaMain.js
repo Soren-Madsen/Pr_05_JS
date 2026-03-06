@@ -173,10 +173,8 @@ function creaAlarma(){
     try {
         let novaAlarma = new Alarma(titol, hora, minut, segon, musica, activa);
 
-        // Afegir l'alarma al Map utilitzant hora_completa com a clau
         Alarmes.set(novaAlarma.hora_completa, novaAlarma);
         
-        // Activar l'alarma si està marcada com activa
         if (activa) {
             novaAlarma.activaAlarma();
         }
@@ -185,7 +183,7 @@ function creaAlarma(){
         netejFormulari();
         
         // Missatge de confirmació
-        alert(`✅ Alarma "${titol}" creada correctament per les ${hora}:${minut}:${segon}`);
+        alert(`Alarma "${titol}" creada correctament per les ${hora}:${minut}:${segon}`);
         
     } catch (error) {
         alert(` Error en crear l'alarma: ${error.message}`);
